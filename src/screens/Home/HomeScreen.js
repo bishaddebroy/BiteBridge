@@ -1,14 +1,14 @@
+// src/screens/Home/HomeScreen.js
 import React, { useState, useContext } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
   TouchableOpacity, 
-  Image, 
-  FlatList 
+  FlatList,
+  Platform
 } from 'react-native';
-import { Searchbar, Card, Title, Paragraph, Chip } from 'react-native-paper';
+import { Searchbar, Card, Title, Paragraph } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES, CATEGORIES } from '../../constants/mockData';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -28,7 +28,7 @@ const HomeScreen = ({ navigation }) => {
   });
 
   const handleSearch = () => {
-    navigation.navigate('Search', { query: searchQuery });
+    navigation.navigate('Search', { query: searchQuery }); // In development
   };
 
   const renderCategoryItem = ({ item }) => (
@@ -72,20 +72,19 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeText}>
-            Hello, {user?.name || 'User'}
-          </Text>
-          <Text style={styles.subtitleText}>
-            Find your favorite stores
-          </Text>
-        </View>
+      {/* Blue top section */}
+      <View style={styles.topSection}>
+        <Text style={styles.welcomeText}>
+          Hello! Food Lover, {user?.name}
+        </Text>
+        <Text style={styles.subtitleText}>
+          Find delicious food nearby
+        </Text>
       </View>
 
       <View style={styles.searchContainer}>
         <Searchbar
-          placeholder="Search stores"
+          placeholder="Search restaurants"
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchbar}
@@ -106,7 +105,7 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <Text style={styles.sectionTitle}>Popular Stores</Text>
+      <Text style={styles.sectionTitle}>Popular Restaurants</Text>
 
       <FlatList
         data={filteredStores}
@@ -123,16 +122,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  header: {
+  topSection: {
     backgroundColor: '#007BFF',
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === 'ios' ? 25 : 25,
+    paddingBottom: 25,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  welcomeContainer: {
-    flex: 1,
+    marginBottom: 5,
   },
   welcomeText: {
     fontSize: 22,

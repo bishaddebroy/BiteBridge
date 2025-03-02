@@ -1,142 +1,144 @@
-// Mock stores with location data for the map
+// Mock restaurants with location data for the map
 export const STORES = [
-    {
-      id: '1',
-      name: 'Tech Gadgets Store',
-      description: 'The best place for all your tech needs',
-      address: '123 Main St, Halifax, NS',
-      image: 'https://example.com/store1.jpg',
-      rating: 4.5,
-      coordinate: {
-        latitude: 44.6488,
-        longitude: -63.5752,
-      },
-      items: [
-        { id: '101', name: 'Smartphone X', price: 999.99, image: 'https://example.com/phone.jpg' },
-        { id: '102', name: 'Laptop Pro', price: 1299.99, image: 'https://example.com/laptop.jpg' },
-        { id: '103', name: 'Wireless Earbuds', price: 149.99, image: 'https://example.com/earbuds.jpg' },
-      ]
+  {
+    id: '1',
+    name: 'Taste of Italy',
+    description: 'Authentic Italian cuisine with homemade pasta and wood-fired pizza',
+    address: '123 Main St, Halifax, NS',
+    image: 'https://example.com/italian-restaurant.jpg',
+    rating: 4.7,
+    coordinate: {
+      latitude: 44.6488,
+      longitude: -63.5752,
     },
-    {
-      id: '2',
-      name: 'Fashion Outlet',
-      description: 'Trendy clothes for everyone',
-      address: '456 Spring Garden Rd, Halifax, NS',
-      image: 'https://example.com/store2.jpg',
-      rating: 4.2,
-      coordinate: {
-        latitude: 44.6427,
-        longitude: -63.5753,
-      },
-      items: [
-        { id: '201', name: 'Denim Jacket', price: 79.99, image: 'https://example.com/jacket.jpg' },
-        { id: '202', name: 'Casual Sneakers', price: 59.99, image: 'https://example.com/sneakers.jpg' },
-        { id: '203', name: 'Summer Dress', price: 49.99, image: 'https://example.com/dress.jpg' },
-      ]
+    items: [
+      { id: '101', name: 'Margherita Pizza', price: 14.99, image: 'https://example.com/pizza.jpg' },
+      { id: '102', name: 'Spaghetti Carbonara', price: 16.99, image: 'https://example.com/pasta.jpg' },
+      { id: '103', name: 'Tiramisu', price: 7.99, image: 'https://example.com/tiramisu.jpg' },
+    ]
+  },
+  {
+    id: '2',
+    name: 'Spice Garden',
+    description: 'Flavorful Indian cuisine with a wide range of vegetarian options',
+    address: '456 Spring Garden Rd, Halifax, NS',
+    image: 'https://example.com/indian-restaurant.jpg',
+    rating: 4.5,
+    coordinate: {
+      latitude: 44.6427,
+      longitude: -63.5753,
     },
-    {
-      id: '3',
-      name: 'Home Decor',
-      description: 'Make your home beautiful',
-      address: '789 Barrington St, Halifax, NS',
-      image: 'https://example.com/store3.jpg',
-      rating: 4.7,
-      coordinate: {
-        latitude: 44.6388,
-        longitude: -63.5717,
-      },
-      items: [
-        { id: '301', name: 'Table Lamp', price: 39.99, image: 'https://example.com/lamp.jpg' },
-        { id: '302', name: 'Area Rug', price: 89.99, image: 'https://example.com/rug.jpg' },
-        { id: '303', name: 'Throw Pillows Set', price: 29.99, image: 'https://example.com/pillows.jpg' },
-      ]
+    items: [
+      { id: '201', name: 'Butter Chicken', price: 17.99, image: 'https://example.com/butter-chicken.jpg' },
+      { id: '202', name: 'Vegetable Biryani', price: 15.99, image: 'https://example.com/biryani.jpg' },
+      { id: '203', name: 'Garlic Naan', price: 3.99, image: 'https://example.com/naan.jpg' },
+    ]
+  },
+  {
+    id: '3',
+    name: 'Sushi Wave',
+    description: 'Fresh and creative Japanese sushi and sashimi',
+    address: '789 Barrington St, Halifax, NS',
+    image: 'https://example.com/sushi-restaurant.jpg',
+    rating: 4.8,
+    coordinate: {
+      latitude: 44.6388,
+      longitude: -63.5717,
     },
-    {
-      id: '4',
-      name: 'Grocery Market',
-      description: 'Fresh produce and local goods',
-      address: '101 Quinpool Rd, Halifax, NS',
-      image: 'https://example.com/store4.jpg',
-      rating: 4.3,
-      coordinate: {
-        latitude: 44.6505,
-        longitude: -63.5908,
-      },
-      items: [
-        { id: '401', name: 'Organic Fruit Basket', price: 24.99, image: 'https://example.com/fruit.jpg' },
-        { id: '402', name: 'Artisan Bread', price: 5.99, image: 'https://example.com/bread.jpg' },
-        { id: '403', name: 'Local Cheese Selection', price: 18.99, image: 'https://example.com/cheese.jpg' },
-      ]
+    items: [
+      { id: '301', name: 'Dragon Roll', price: 12.99, image: 'https://example.com/dragon-roll.jpg' },
+      { id: '302', name: 'Salmon Sashimi', price: 15.99, image: 'https://example.com/sashimi.jpg' },
+      { id: '303', name: 'Miso Soup', price: 4.99, image: 'https://example.com/miso.jpg' },
+    ]
+  },
+  {
+    id: '4',
+    name: 'Burger Joint',
+    description: 'Gourmet burgers with fresh local ingredients',
+    address: '101 Quinpool Rd, Halifax, NS',
+    image: 'https://example.com/burger-restaurant.jpg',
+    rating: 4.3,
+    coordinate: {
+      latitude: 44.6505,
+      longitude: -63.5908,
     },
-    {
-      id: '5',
-      name: 'Sports Gear',
-      description: 'Equipment for all your athletic needs',
-      address: '222 Robie St, Halifax, NS',
-      image: 'https://example.com/store5.jpg',
-      rating: 4.4,
-      coordinate: {
-        latitude: 44.6540,
-        longitude: -63.5830,
-      },
-      items: [
-        { id: '501', name: 'Running Shoes', price: 119.99, image: 'https://example.com/runshoes.jpg' },
-        { id: '502', name: 'Yoga Mat', price: 29.99, image: 'https://example.com/yogamat.jpg' },
-        { id: '503', name: 'Basketball', price: 24.99, image: 'https://example.com/basketball.jpg' },
-      ]
-    }
-  ];
-  
-  // Category data
-  export const CATEGORIES = [
-    { id: '1', name: 'Electronics', icon: 'laptop' },
-    { id: '2', name: 'Fashion', icon: 'shirt' },
-    { id: '3', name: 'Home', icon: 'home' },
-    { id: '4', name: 'Grocery', icon: 'shopping-cart' },
-    { id: '5', name: 'Sports', icon: 'basketball' },
-  ];
-  
-  // Sample orders for profile screen
-  export const ORDERS = [
-    { 
-      id: 'ORD-001', 
-      date: '2023-11-15', 
-      storeId: '1', 
-      storeName: 'Tech Gadgets Store',
-      items: [
-        { id: '101', name: 'Smartphone X', price: 999.99, quantity: 1 },
-      ],
-      total: 999.99,
-      status: 'Delivered'
+    items: [
+      { id: '401', name: 'Classic Cheeseburger', price: 13.99, image: 'https://example.com/cheeseburger.jpg' },
+      { id: '402', name: 'Truffle Fries', price: 6.99, image: 'https://example.com/fries.jpg' },
+      { id: '403', name: 'Chocolate Milkshake', price: 5.99, image: 'https://example.com/milkshake.jpg' },
+    ]
+  },
+  {
+    id: '5',
+    name: 'Taco Fiesta',
+    description: 'Authentic Mexican tacos and burritos',
+    address: '222 Robie St, Halifax, NS',
+    image: 'https://example.com/mexican-restaurant.jpg',
+    rating: 4.6,
+    coordinate: {
+      latitude: 44.6540,
+      longitude: -63.5830,
     },
-    { 
-      id: 'ORD-002', 
-      date: '2023-11-05', 
-      storeId: '3', 
-      storeName: 'Home Decor',
-      items: [
-        { id: '301', name: 'Table Lamp', price: 39.99, quantity: 2 },
-        { id: '302', name: 'Area Rug', price: 89.99, quantity: 1 },
-      ],
-      total: 169.97,
-      status: 'Delivered'
-    },
-    { 
-      id: 'ORD-003', 
-      date: '2023-11-20', 
-      storeId: '5', 
-      storeName: 'Sports Gear',
-      items: [
-        { id: '502', name: 'Yoga Mat', price: 29.99, quantity: 1 },
-      ],
-      total: 29.99,
-      status: 'Processing'
-    }
-  ];
-  
-  // Sample payments for profile screen
-  export const PAYMENTS = [
-    { id: 'PAY-001', date: '2023-11-15', amount: 999.99, method: 'Credit Card', status: 'Success' },
-    { id: 'PAY-002', date: '2023-11-05', amount: 169.97, method: 'PayPal', status: 'Success' },
-    { id: 'PAY-003', date: '2023-11-20', amount: 29.99, method: 'Credit Card', status: 'Pending' },
-  ];
+    items: [
+      { id: '501', name: 'Street Tacos (3)', price: 11.99, image: 'https://example.com/tacos.jpg' },
+      { id: '502', name: 'Chicken Burrito', price: 12.99, image: 'https://example.com/burrito.jpg' },
+      { id: '503', name: 'Guacamole & Chips', price: 7.99, image: 'https://example.com/guacamole.jpg' },
+    ]
+  }
+];
+
+// Food category data with correct icon names
+export const CATEGORIES = [
+  { id: '1', name: 'Pizza', icon: 'pizza-outline' },
+  { id: '2', name: 'Burgers', icon: 'fast-food-outline' },
+  { id: '3', name: 'Sushi', icon: 'restaurant-outline' },
+  { id: '4', name: 'Drinks', icon: 'cafe-outline' },
+  { id: '5', name: 'Desserts', icon: 'ice-cream-outline' },
+];
+
+// Sample orders for profile screen
+export const ORDERS = [
+  { 
+    id: 'ORD-001', 
+    date: '2023-11-15', 
+    storeId: '1', 
+    storeName: 'Taste of Italy',
+    items: [
+      { id: '101', name: 'Margherita Pizza', price: 14.99, quantity: 1 },
+      { id: '103', name: 'Tiramisu', price: 7.99, quantity: 1 },
+    ],
+    total: 22.98,
+    status: 'Delivered'
+  },
+  { 
+    id: 'ORD-002', 
+    date: '2023-11-05', 
+    storeId: '3', 
+    storeName: 'Sushi Wave',
+    items: [
+      { id: '301', name: 'Dragon Roll', price: 12.99, quantity: 2 },
+      { id: '303', name: 'Miso Soup', price: 4.99, quantity: 1 },
+    ],
+    total: 30.97,
+    status: 'Delivered'
+  },
+  { 
+    id: 'ORD-003', 
+    date: '2023-11-20', 
+    storeId: '5', 
+    storeName: 'Taco Fiesta',
+    items: [
+      { id: '501', name: 'Street Tacos (3)', price: 11.99, quantity: 1 },
+      { id: '503', name: 'Guacamole & Chips', price: 7.99, quantity: 1 },
+    ],
+    total: 19.98,
+    status: 'Processing'
+  }
+];
+
+// Sample payments for profile screen
+export const PAYMENTS = [
+  { id: 'PAY-001', date: '2023-11-15', amount: 22.98, method: 'Credit Card', status: 'Success' },
+  { id: 'PAY-002', date: '2023-11-05', amount: 30.97, method: 'PayPal', status: 'Success' },
+  { id: 'PAY-003', date: '2023-11-20', amount: 19.98, method: 'Credit Card', status: 'Pending' },
+];

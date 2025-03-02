@@ -35,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>CSCI 5708 Store</Text>
+        <Text style={styles.appName}>CSCI 5708</Text>
       </View>
 
       <View style={styles.formContainer}>

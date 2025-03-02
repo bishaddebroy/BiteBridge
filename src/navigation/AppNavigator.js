@@ -18,13 +18,13 @@ import HomeScreen from '../screens/Home/HomeScreen';
 //import FilterScreen from '../screens/Home/FilterScreen';
 import StoreDetailScreen from '../screens/Home/StoreDetailScreen';
 import MapScreen from '../screens/Map/MapScreen';
-//import OrderScreen from '../screens/Payment/OrderScreen';
-//import PaymentSuccessScreen from '../screens/Payment/PaymentSuccessScreen';
-//import PaymentFailedScreen from '../screens/Payment/PaymentFailedScreen';
-//import ProfileScreen from '../screens/Profile/ProfileScreen';
-//import CameraScreen from '../screens/Profile/CameraScreen';
-//import OrdersScreen from '../screens/Profile/OrdersScreen';
-//import PaymentsScreen from '../screens/Profile/PaymentsScreen';
+import OrderScreen from '../screens/Payment/OrderScreen';
+import PaymentSuccessScreen from '../screens/Payment/PaymentSuccessScreen';
+import PaymentFailedScreen from '../screens/Payment/PaymentFailedScreen';
+import ProfileScreen from '../screens/Profile/ProfileScreen';
+import CameraScreen from '../screens/Profile/CameraScreen';
+import OrdersScreen from '../screens/Profile/OrdersScreen';
+import PaymentsScreen from '../screens/Profile/PaymentsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -52,7 +52,7 @@ const HomeStack = () => {
       <Stack.Screen 
         name="HomeMain" 
         component={HomeScreen} 
-        options={{ headerTitle: 'Home' }}
+        options={{ headerShown: false }}
       />
       
       <Stack.Screen 
@@ -71,7 +71,7 @@ const MapStack = () => {
       <Stack.Screen 
         name="MapMain" 
         component={MapScreen} 
-        options={{ headerTitle: 'Map' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="StoreDetail" 
@@ -84,12 +84,41 @@ const MapStack = () => {
 
 // Payment stack navigator
 const PaymentStack = () => {
-  return 
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="Order" 
+        component={OrderScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="PaymentSuccess" 
+        component={PaymentSuccessScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="PaymentFailed" 
+        component={PaymentFailedScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  ); 
 };
 
 // Profile stack navigator
 const ProfileStack = () => {
-  return 
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="ProfileMain" 
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="Camera" component={CameraScreen} />
+      <Stack.Screen name="Orders" component={OrdersScreen} />
+      <Stack.Screen name="Payments" component={PaymentsScreen} />
+    </Stack.Navigator>
+  ); 
 };
 
 // Main tab navigator
@@ -97,6 +126,7 @@ const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
@@ -112,11 +142,10 @@ const TabNavigator = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-      })}
-      tabBarOptions={{
         activeTintColor: '#007BFF',
         inactiveTintColor: 'gray',
-      }}
+      })}
+      //tabBarOptions={{}}
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Map" component={MapStack} />
