@@ -17,7 +17,7 @@ import HomeScreen from '../screens/Home/HomeScreen';
 //import SearchScreen from '../screens/Home/SearchScreen';
 //import FilterScreen from '../screens/Home/FilterScreen';
 import StoreDetailScreen from '../screens/Home/StoreDetailScreen';
-//import MapScreen from '../screens/Map/MapScreen';
+import MapScreen from '../screens/Map/MapScreen';
 //import OrderScreen from '../screens/Payment/OrderScreen';
 //import PaymentSuccessScreen from '../screens/Payment/PaymentSuccessScreen';
 //import PaymentFailedScreen from '../screens/Payment/PaymentFailedScreen';
@@ -66,7 +66,20 @@ const HomeStack = () => {
 
 // Map stack navigator
 const MapStack = () => {
-  return
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="MapMain" 
+        component={MapScreen} 
+        options={{ headerTitle: 'Map' }}
+      />
+      <Stack.Screen 
+        name="StoreDetail" 
+        component={StoreDetailScreen}
+        options={({ route }) => ({ title: route.params?.storeName || 'Store' })}
+      />
+    </Stack.Navigator>
+  );
 };
 
 // Payment stack navigator
