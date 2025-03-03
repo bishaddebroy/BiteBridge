@@ -36,5 +36,4 @@ yarn-error.*
 *.tsbuildinfo
 
 #firebase
-firebase.js
-src/services/firebase.js
+firebaseConfig.js
