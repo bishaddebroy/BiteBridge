@@ -35,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>CSCI 5708</Text>
+        <Text style={styles.appName}>BiteBridge</Text>
       </View>
 
       <View style={styles.formContainer}>
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
+    marginTop: 20,
+    marginBottom: 20,
   },
   logo: {
     width: 120,

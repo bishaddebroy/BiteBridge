@@ -35,5 +35,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-#firebase
-firebaseConfig.js
+#firebase (Only public for the private repository)
+# firebaseConfig.js

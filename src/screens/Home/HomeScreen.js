@@ -55,6 +55,7 @@ const HomeScreen = ({ navigation }) => {
     >
       <Card style={styles.storeCard}>
         <Card.Cover source={{ uri: item.image }} style={styles.storeImage} />
+        {console.log(item.image)}
         <Card.Content>
           <Title>{item.name}</Title>
           <Paragraph numberOfLines={2}>{item.description}</Paragraph>
