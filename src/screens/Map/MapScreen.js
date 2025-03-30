@@ -291,25 +291,31 @@ const MapScreen = ({ navigation }) => {
                 <Ionicons name="restaurant" size={24} color="#FF3B30" />
               </View>
             </View>
-            <Callout tooltip>
-              <View>
-                <Card style={styles.calloutCard}>
-                  <Card.Content>
-                    <Title style={styles.calloutTitle}>{store.name}</Title>
-                    <Paragraph numberOfLines={2}>{store.description}</Paragraph>
-                    <View style={styles.calloutFooter}>
-                      <View style={styles.ratingContainer}>
-                        <Ionicons name="star" size={16} color="#FFD700" />
-                        <Text style={styles.rating}>{store.rating}</Text>
-                      </View>
-                      {store.formattedDistance && (
-                        <Text style={styles.distance}>{store.formattedDistance}</Text>
-                      )}
-                      <Text style={styles.calloutAction}>View Details</Text>
+            
+            {/* IMPORTANT CHANGES: Made callout clickable by adding onPress and removing tooltip prop */}
+            <Callout 
+              onPress={() => handleStoreDetail(store.id, store.name)}
+              style={styles.calloutContainer}
+            >
+              <Card style={styles.calloutCard}>
+                <Card.Content>
+                  <Title style={styles.calloutTitle}>{store.name}</Title>
+                  <Paragraph numberOfLines={2}>{store.description}</Paragraph>
+                  <View style={styles.calloutFooter}>
+                    <View style={styles.ratingContainer}>
+                      <Ionicons name="star" size={16} color="#FFD700" />
+                      <Text style={styles.rating}>{store.rating}</Text>
                     </View>
-                  </Card.Content>
-                </Card>
-              </View>
+                    {store.formattedDistance && (
+                      <Text style={styles.distance}>{store.formattedDistance}</Text>
+                    )}
+                    <View style={styles.calloutAction}>
+                      <Text style={styles.calloutActionText}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={14} color="#007BFF" />
+                    </View>
+                  </View>
+                </Card.Content>
+              </Card>
             </Callout>
           </Marker>
         ))}
@@ -432,9 +438,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF3B30',
   },
+  // Updated callout styles
+  calloutContainer: {
+    width: 220,
+    height: 150, // Set fixed height to ensure consistent sizing
+  },
   calloutCard: {
-    width: 200,
+    width: '100%',
     borderRadius: 10,
+    elevation: 0, // Remove elevation to prevent touch issues
+    margin: 0,
+    padding: 0,
   },
   calloutTitle: {
     fontSize: 16,
@@ -444,6 +458,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
+  },
+  calloutAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  calloutActionText: {
+    color: '#007BFF',
+    fontWeight: 'bold',
+    marginRight: 2,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -462,10 +485,6 @@ const styles = StyleSheet.create({
     color: '#007BFF',
     fontWeight: 'bold',
     marginLeft: 4,
-  },
-  calloutAction: {
-    color: '#007BFF',
-    fontWeight: 'bold',
   },
   storePreview: {
     position: 'absolute',
