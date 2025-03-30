@@ -60,4 +60,5 @@ export const STORAGE_KEYS = {
   IS_LOGGED_IN: 'is_logged_in',
   CART_ITEMS: 'cart_items',
   RECENT_SEARCHES: 'recent_searches',
+  USER_PHOTO_URL: 'user_photo_url',
 };

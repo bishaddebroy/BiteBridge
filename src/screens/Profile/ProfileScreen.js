@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,16 @@ import { clearAllData } from '../../utils/asyncStorage';
 const ProfileScreen = ({ navigation }) => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const [timestamp, setTimestamp] = useState(new Date().getTime());
+
+  // Update timestamp when the screen gains focus - ensures fresh image on navigation
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setTimestamp(new Date().getTime());
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleLogout = async () => {
     try {
@@ -45,7 +55,10 @@ const ProfileScreen = ({ navigation }) => {
         >
           {user?.photoURL ? (
             <Image 
-              source={{ uri: user.photoURL }} 
+              source={{ 
+                uri: `${user.photoURL}?time=${timestamp}`,
+                cache: 'reload'
+              }} 
               style={styles.profileImage}
             />
           ) : (

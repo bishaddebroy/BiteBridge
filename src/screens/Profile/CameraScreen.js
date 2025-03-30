@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+// src/screens/Profile/CameraScreen.js
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,70 +8,90 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform
 } from 'react-native';
-import { Camera } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../contexts/AuthContext';
 import { uploadProfilePicture } from '../../services/authService';
 
 const CameraScreen = ({ navigation }) => {
-  const { user } = useContext(AuthContext);
-  const [hasPermission, setHasPermission] = useState(null);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back);
-  const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
-  const [capturedImage, setCapturedImage] = useState(null);
+  const { user, refreshUser } = useContext(AuthContext);
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  
-  const cameraRef = useRef(null);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
-
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.7,
-        });
-        
-        setCapturedImage(photo.uri);
-      } catch (error) {
-        console.error('Error taking picture:', error);
-        Alert.alert('Error', 'Failed to capture image.');
+  // Function to handle picking an image from the gallery
+  const pickImage = async () => {
+    try {
+      // Request media library permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to select a profile picture.');
+        return;
       }
+
+      // Launch image library
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  // Function to handle taking a photo using the device camera
+  const takePhoto = async () => {
+    try {
+      // Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access to take a profile picture.');
+        return;
+      }
+
+      // Launch camera
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
     }
   };
 
   const retakePicture = () => {
-    setCapturedImage(null);
+    setImage(null);
   };
 
-  const toggleCameraType = () => {
-    setCameraType(
-      cameraType === Camera.Constants.Type.back
-        ? Camera.Constants.Type.front
-        : Camera.Constants.Type.back
-    );
-  };
-
-  const toggleFlash = () => {
-    setFlash(
-      flash === Camera.Constants.FlashMode.off
-        ? Camera.Constants.FlashMode.on
-        : Camera.Constants.FlashMode.off
-    );
-  };
-
+  // Function to save the profile picture
   const saveProfilePicture = async () => {
-    if (!capturedImage || !user) return;
+    if (!image || !user) return;
     
     try {
       setLoading(true);
-      await uploadProfilePicture(capturedImage, user.uid);
+      
+      // Upload the image to Firebase
+      await uploadProfilePicture(image, user.uid);
+      
+      // Refresh the user data to get the updated profile image URL
+      await refreshUser();
+      
       Alert.alert(
         'Success',
         'Profile picture updated successfully',
@@ -84,34 +105,12 @@ const CameraScreen = ({ navigation }) => {
     }
   };
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007BFF" />
-      </View>
-    );
-  }
-
-  if (hasPermission === false) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>No access to camera</Text>
-        <TouchableOpacity
-          style={styles.permissionButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.permissionButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      {capturedImage ? (
+      {image ? (
         // Preview captured image
         <View style={styles.previewContainer}>
-          <Image source={{ uri: capturedImage }} style={styles.previewImage} />
+          <Image source={{ uri: image }} style={styles.previewImage} />
           
           <View style={styles.previewActions}>
             <TouchableOpacity
@@ -140,42 +139,31 @@ const CameraScreen = ({ navigation }) => {
           </View>
         </View>
       ) : (
-        // Camera view
-        <>
-          <Camera
-            ref={cameraRef}
-            style={styles.camera}
-            type={cameraType}
-            flashMode={flash}
-          >
-            <View style={styles.cameraControls}>
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={toggleFlash}
-              >
-                <Ionicons
-                  name={flash === Camera.Constants.FlashMode.on ? "flash" : "flash-off"}
-                  size={24}
-                  color="white"
-                />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.captureButton}
-                onPress={takePicture}
-              >
-                <View style={styles.captureButtonInner} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={toggleCameraType}
-              >
-                <Ionicons name="camera-reverse" size={24} color="white" />
-              </TouchableOpacity>
+        // Show options to take photo or select from gallery
+        <View style={styles.optionsContainer}>
+          <Text style={styles.title}>Update Profile Picture</Text>
+          
+          <TouchableOpacity style={styles.optionButton} onPress={takePhoto}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="camera-outline" size={32} color="#007BFF" />
             </View>
-          </Camera>
-        </>
+            <Text style={styles.optionText}>Take Photo</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionButton} onPress={pickImage}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="images-outline" size={32} color="#007BFF" />
+            </View>
+            <Text style={styles.optionText}>Choose from Gallery</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -186,65 +174,62 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
-  centered: {
+  optionsContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black',
+    padding: 20,
+    backgroundColor: 'white',
   },
-  errorText: {
-    color: 'white',
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  permissionButton: {
-    backgroundColor: '#007BFF',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  permissionButtonText: {
-    color: 'white',
-    fontSize: 16,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 40,
+    textAlign: 'center',
   },
-  camera: {
-    flex: 1,
-  },
-  cameraControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
+  optionButton: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    width: '100%',
+    maxWidth: 350,
   },
-  controlButton: {
-    padding: 12,
-    borderRadius: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButtonInner: {
+  iconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'white',
+    backgroundColor: '#eeeeee',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionText: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  cancelButton: {
+    marginTop: 20,
+    padding: 12,
+  },
+  cancelButtonText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    fontWeight: '500',
   },
   previewContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'black',
   },
   previewImage: {
-    flex: 1,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    marginBottom: 40,
   },
   previewActions: {
     position: 'absolute',
