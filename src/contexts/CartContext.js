@@ -1,3 +1,4 @@
+// src/contexts/CartContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { getData, storeData, STORAGE_KEYS } from '../utils/asyncStorage';
@@ -8,23 +9,26 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Load cart items from AsyncStorage on initial render
   useEffect(() => {
+    const loadCartItems = async () => {
+      try {
+        setLoading(true);
+        const savedCart = await getData(STORAGE_KEYS.CART_ITEMS);
+        if (savedCart) {
+          setCartItems(savedCart);
+        }
+      } catch (error) {
+        console.error('Error loading cart items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     loadCartItems();
   }, []);
 
-  const loadCartItems = async () => {
-    try {
-      const savedCart = await getData(STORAGE_KEYS.CART_ITEMS);
-      if (savedCart) {
-        setCartItems(savedCart);
-      }
-    } catch (error) {
-      console.error('Error loading cart items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Add item to cart
   const addToCart = async (item, storeId, storeName) => {
     try {
       // Check if item is already in cart
@@ -62,6 +66,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Update item quantity
   const updateQuantity = async (itemId, quantity) => {
     try {
       if (quantity < 1) {
@@ -83,6 +88,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Remove item from cart
   const removeFromCart = async (itemId) => {
     try {
       const updatedCart = cartItems.filter(item => item.id !== itemId);
@@ -97,6 +103,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Clear cart
   const clearCart = async () => {
     try {
       setCartItems([]);
@@ -110,6 +117,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Get cart total
   const getCartTotal = () => {
     return cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
@@ -117,11 +125,23 @@ export const CartProvider = ({ children }) => {
     );
   };
 
+  // Get total item count
   const getItemCount = () => {
     return cartItems.reduce(
       (count, item) => count + item.quantity,
       0
     );
+  };
+
+  // Check if a specific item is in the cart
+  const isItemInCart = (itemId) => {
+    return cartItems.some(item => item.id === itemId);
+  };
+
+  // Get the quantity of a specific item in the cart
+  const getItemQuantity = (itemId) => {
+    const item = cartItems.find(item => item.id === itemId);
+    return item ? item.quantity : 0;
   };
 
   return (
@@ -135,6 +155,8 @@ export const CartProvider = ({ children }) => {
         clearCart,
         getCartTotal,
         getItemCount,
+        isItemInCart,
+        getItemQuantity
       }}
     >
       {children}

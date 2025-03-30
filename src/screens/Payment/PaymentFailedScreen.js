@@ -1,18 +1,37 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+// src/screens/Payment/PaymentFailedScreen.js
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, BackHandler } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions } from '@react-navigation/native';
 
 const PaymentFailedScreen = ({ navigation }) => {
+  // Prevent going back to Order screen with hardware back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        handleTryAgain();
+        return true;
+      }
+    );
+    
+    return () => backHandler.remove();
+  }, []);
+
   const handleTryAgain = () => {
-    navigation.navigate('Order');
+    // Go back to the Order screen
+    navigation.goBack();
   };
 
   const handleCancel = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
+    // Reset navigation to Home screen
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      })
+    );
   };
 
   return (

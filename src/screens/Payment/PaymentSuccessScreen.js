@@ -1,18 +1,59 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+// src/screens/Payment/PaymentSuccessScreen.js
+import React, { useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, BackHandler } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import { CartContext } from '../../contexts/CartContext';
+import { CommonActions } from '@react-navigation/native';
 
-const PaymentSuccessScreen = ({ navigation }) => {
+const PaymentSuccessScreen = ({ navigation, route }) => {
+  const { clearCart } = useContext(CartContext);
+  const { orderId, total } = route.params || { 
+    orderId: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+    total: '0.00'
+  };
+  
+  // Clear cart when this screen mounts
+  useEffect(() => {
+    clearCart();
+    
+    // Prevent going back to Order screen with hardware back button
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        handleContinueShopping();
+        return true;
+      }
+    );
+    
+    return () => backHandler.remove();
+  }, []);
+
   const handleContinueShopping = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
+    // Reset navigation to Home screen
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      })
+    );
   };
 
   const handleViewOrders = () => {
-    navigation.navigate('Profile', { screen: 'Orders' });
+    // Reset navigation and navigate to Profile > Orders
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          { 
+            name: 'Profile',
+            state: {
+              routes: [{ name: 'Orders' }],
+            }
+          }
+        ],
+      })
+    );
   };
 
   return (
@@ -28,9 +69,23 @@ const PaymentSuccessScreen = ({ navigation }) => {
           Your order has been placed successfully. You will receive a confirmation email shortly.
         </Text>
         
-        <View style={styles.orderIdContainer}>
-          <Text style={styles.orderIdLabel}>Order ID:</Text>
-          <Text style={styles.orderId}>ORD-{Math.floor(100000 + Math.random() * 900000)}</Text>
+        <View style={styles.orderDetailsContainer}>
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Order ID:</Text>
+            <Text style={styles.orderDetailValue}>{orderId}</Text>
+          </View>
+          
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Amount Paid:</Text>
+            <Text style={styles.orderDetailValue}>${total}</Text>
+          </View>
+          
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Date:</Text>
+            <Text style={styles.orderDetailValue}>
+              {new Date().toLocaleDateString()}
+            </Text>
+          </View>
         </View>
       </View>
       
@@ -82,19 +137,23 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 24,
   },
-  orderIdContainer: {
-    flexDirection: 'row',
+  orderDetailsContainer: {
     backgroundColor: '#f5f5f5',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    width: '100%',
+    padding: 16,
     borderRadius: 8,
+    marginTop: 16,
   },
-  orderIdLabel: {
+  orderDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  orderDetailLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 8,
   },
-  orderId: {
+  orderDetailValue: {
     fontSize: 16,
   },
   buttonsContainer: {

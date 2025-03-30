@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/screens/Home/StoreDetailScreen.js
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,61 +10,75 @@ import {
   FlatList,
   Alert,
 } from 'react-native';
-import { Button, Card, Title, Paragraph, Divider, Badge } from 'react-native-paper';
+import { Button, Card, Title, Paragraph, Divider, Badge, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES } from '../../constants/mockData';
-import { storeData, getData, STORAGE_KEYS } from '../../utils/asyncStorage';
+import { CartContext } from '../../contexts/CartContext';
 
 const StoreDetailScreen = ({ route, navigation }) => {
-  const { storeId } = route.params;
+  const { storeId, highlightItemId } = route.params;
   const [store, setStore] = useState(null);
-  const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Use CartContext instead of local cart state
+  const { cartItems, addToCart, getItemCount } = useContext(CartContext);
   
   useEffect(() => {
-    // In a real app, you would fetch store details from an API
-    // Here we're just using our mock data
-    const storeData = STORES.find((s) => s.id === storeId);
-    setStore(storeData);
-    
-    // Load cart from AsyncStorage
-    const loadCart = async () => {
-      const savedCart = await getData(STORAGE_KEYS.CART_ITEMS);
-      if (savedCart) {
-        setCart(savedCart);
+    // Fetch store details
+    const fetchStoreDetails = async () => {
+      try {
+        setLoading(true);
+        // In a real app, you would fetch store details from an API
+        // Here we're just using mock data with a small delay to simulate network
+        setTimeout(() => {
+          const storeData = STORES.find((s) => s.id === storeId);
+          setStore(storeData);
+          setLoading(false);
+          
+          // If there's a highlighted item, scroll to it
+          if (highlightItemId && storeData) {
+            // Implementation would depend on your UI structure
+            // You might need a ref and scrollToItem function
+          }
+        }, 300);
+      } catch (error) {
+        console.error('Error fetching store details:', error);
+        Alert.alert('Error', 'Failed to load store details');
+        setLoading(false);
       }
     };
     
-    loadCart();
-  }, [storeId]);
+    fetchStoreDetails();
+  }, [storeId, highlightItemId]);
 
-  const addToCart = async (item) => {
-    // Check if item is already in cart
-    const existingItemIndex = cart.findIndex(
-      (cartItem) => cartItem.id === item.id
-    );
-    
-    let updatedCart = [];
-    
-    if (existingItemIndex >= 0) {
-      // Item exists, update quantity
-      updatedCart = [...cart];
-      updatedCart[existingItemIndex] = {
-        ...updatedCart[existingItemIndex],
-        quantity: updatedCart[existingItemIndex].quantity + 1,
-      };
-    } else {
-      // Item doesn't exist, add it with quantity 1
-      updatedCart = [...cart, { ...item, quantity: 1, storeId, storeName: store.name }];
+  const handleAddToCart = async (item) => {
+    try {
+      const success = await addToCart(item, storeId, store.name);
+      
+      if (success) {
+        Alert.alert(
+          'Added to Cart', 
+          `${item.name} has been added to your cart.`,
+          [
+            { 
+              text: 'Keep Shopping', 
+              style: 'default' 
+            },
+            { 
+              text: 'View Cart', 
+              onPress: () => navigation.navigate('Payment', { screen: 'Order' }) 
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Alert.alert('Error', 'Failed to add item to cart');
     }
-    
-    setCart(updatedCart);
-    await storeData(STORAGE_KEYS.CART_ITEMS, updatedCart);
-    
-    Alert.alert('Success', `${item.name} added to cart`);
   };
 
   const goToPayment = () => {
-    if (cart.length === 0) {
+    if (getItemCount() === 0) {
       Alert.alert('Cart Empty', 'Add items to the cart before proceeding to checkout.');
       return;
     }
@@ -72,35 +87,69 @@ const StoreDetailScreen = ({ route, navigation }) => {
   };
 
   const renderItem = ({ item }) => {
+    // Check if this item is in the cart
+    const itemInCart = cartItems.find(cartItem => cartItem.id === item.id);
+    const isHighlighted = highlightItemId === item.id;
+    
     return (
-      <Card style={styles.itemCard}>
+      <Card 
+        style={[
+          styles.itemCard,
+          isHighlighted && styles.highlightedCard
+        ]}
+      >
         <Card.Cover source={{ uri: item.image }} style={styles.itemImage} />
         <Card.Content>
           <Title style={styles.itemName}>{item.name}</Title>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+            {itemInCart && (
+              <Badge style={styles.cartBadge}>
+                {itemInCart.quantity}
+              </Badge>
+            )}
           </View>
         </Card.Content>
         <Card.Actions style={styles.cardActions}>
           <Button 
             mode="contained" 
-            onPress={() => addToCart(item)}
+            onPress={() => handleAddToCart(item)}
             style={styles.addButton}
+            icon={itemInCart ? "cart-plus" : "cart"}
           >
-            Add to Cart
+            {itemInCart ? 'Add More' : 'Add to Cart'}
           </Button>
         </Card.Actions>
       </Card>
     );
   };
 
-  if (!store) {
+  if (loading) {
     return (
       <View style={styles.centered}>
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#007BFF" />
+        <Text style={styles.loadingText}>Loading store details...</Text>
       </View>
     );
   }
+
+  if (!store) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="alert-circle-outline" size={60} color="#FF3B30" />
+        <Text style={styles.errorText}>Store not found</Text>
+        <Button 
+          mode="contained" 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          Go Back
+        </Button>
+      </View>
+    );
+  }
+
+  const itemCount = getItemCount();
 
   return (
     <View style={styles.container}>
@@ -137,12 +186,12 @@ const StoreDetailScreen = ({ route, navigation }) => {
         />
       </ScrollView>
       
-      {cart.length > 0 && (
+      {itemCount > 0 && (
         <View style={styles.cartButtonContainer}>
           <TouchableOpacity style={styles.cartButton} onPress={goToPayment}>
             <Text style={styles.cartButtonText}>Proceed to Checkout</Text>
             <Badge size={24} style={styles.badge}>
-              {cart.reduce((total, item) => total + item.quantity, 0)}
+              {itemCount}
             </Badge>
           </TouchableOpacity>
         </View>
@@ -160,6 +209,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 24,
+  },
+  backButton: {
+    paddingHorizontal: 24,
   },
   storeImage: {
     width: '100%',
@@ -217,12 +281,21 @@ const styles = StyleSheet.create({
   },
   itemsContainer: {
     paddingHorizontal: 8,
+    paddingBottom: 100, // Add space for the cart button at bottom
   },
   itemCard: {
     flex: 1,
     margin: 8,
     borderRadius: 10,
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  highlightedCard: {
+    borderWidth: 2,
+    borderColor: '#007BFF',
   },
   itemImage: {
     height: 120,
@@ -234,11 +307,17 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   price: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007BFF',
+  },
+  cartBadge: {
+    backgroundColor: '#007BFF',
   },
   cardActions: {
     justifyContent: 'center',
@@ -256,6 +335,10 @@ const styles = StyleSheet.create({
     elevation: 10,
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cartButton: {
     backgroundColor: '#007BFF',
