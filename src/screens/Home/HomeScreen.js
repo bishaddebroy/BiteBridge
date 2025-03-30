@@ -1,34 +1,132 @@
 // src/screens/Home/HomeScreen.js
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
   FlatList,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
-import { Searchbar, Card, Title, Paragraph } from 'react-native-paper';
+import { Searchbar, Card, Title, Paragraph, Chip } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES, CATEGORIES } from '../../constants/mockData';
 import { AuthContext } from '../../contexts/AuthContext';
+import { getUserLocation } from '../../services/locationService';
+import { calculateDistance, formatDistance } from '../../services/geocodingService';
+import { useFocusEffect } from '@react-navigation/native';
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
+  const [sortBy, setSortBy] = useState('distance'); // 'distance', 'rating'
+  const [userLocation, setUserLocation] = useState(null);
+  const [storesWithDistances, setStoresWithDistances] = useState([]);
+  const [filteredStores, setFilteredStores] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  const filteredStores = STORES.filter(store => {
-    // Filter based on search query
-    if (searchQuery) {
-      return store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             store.description.toLowerCase().includes(searchQuery.toLowerCase());
+  // Load user location and calculate distances
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          
+          // Get user location
+          const location = await getUserLocation();
+          if (location) {
+            setUserLocation(location);
+            
+            // Calculate distance for each store
+            const storesWithDist = STORES.map(store => {
+              const distance = calculateDistance(
+                location.latitude,
+                location.longitude,
+                store.coordinate.latitude,
+                store.coordinate.longitude
+              );
+              
+              return {
+                ...store,
+                distance,
+                formattedDistance: formatDistance(distance)
+              };
+            });
+            
+            // Sort stores by distance
+            const sortedStores = [...storesWithDist].sort((a, b) => a.distance - b.distance);
+            
+            setStoresWithDistances(sortedStores);
+            applyFilters(sortedStores, activeCategory, searchQuery, sortBy);
+          } else {
+            setStoresWithDistances(STORES);
+            applyFilters(STORES, activeCategory, searchQuery, sortBy);
+          }
+        } catch (error) {
+          console.error('Error loading data:', error);
+          setStoresWithDistances(STORES);
+          applyFilters(STORES, activeCategory, searchQuery, sortBy);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadData();
+    }, [])
+  );
+  
+  // Apply filters when category, search, or sort changes
+  useEffect(() => {
+    applyFilters(storesWithDistances, activeCategory, searchQuery, sortBy);
+  }, [activeCategory, searchQuery, sortBy, storesWithDistances]);
+  
+  // Apply all filters to stores
+  const applyFilters = (stores, category, query, sort) => {
+    let filtered = [...stores];
+    
+    // Filter by category
+    if (category) {
+      filtered = filtered.filter(store => 
+        store.categories && store.categories.includes(category)
+      );
     }
-    return true;
-  });
+    
+    // Filter by search query
+    if (query) {
+      filtered = filtered.filter(store => {
+        // Search in store name and description
+        const matchesStore = store.name.toLowerCase().includes(query.toLowerCase()) ||
+                            store.description.toLowerCase().includes(query.toLowerCase());
+        
+        // Search in menu items
+        const matchesMenu = store.items.some(item => 
+          item.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        return matchesStore || matchesMenu;
+      });
+    }
+    
+    // Apply sorting
+    if (sort === 'distance') {
+      filtered.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+    } else if (sort === 'rating') {
+      filtered.sort((a, b) => b.rating - a.rating);
+    }
+    
+    setFilteredStores(filtered);
+  };
+
+  const toggleSortBy = () => {
+    setSortBy(sortBy === 'distance' ? 'rating' : 'distance');
+  };
 
   const handleSearch = () => {
-    navigation.navigate('Search', { query: searchQuery }); // In development
+    if (searchQuery.trim() !== '') {
+      navigation.navigate('Search', { query: searchQuery });
+    }
   };
 
   const renderCategoryItem = ({ item }) => (
@@ -39,7 +137,11 @@ const HomeScreen = ({ navigation }) => {
       ]}
       onPress={() => setActiveCategory(activeCategory === item.id ? null : item.id)}
     >
-      <Ionicons name={item.icon} size={24} color={activeCategory === item.id ? "#FFF" : "#007BFF"} />
+      <Ionicons 
+        name={item.icon} 
+        size={24} 
+        color={activeCategory === item.id ? "#FFF" : "#007BFF"} 
+      />
       <Text style={[
         styles.categoryText,
         activeCategory === item.id && styles.activeCategoryText
@@ -55,7 +157,6 @@ const HomeScreen = ({ navigation }) => {
     >
       <Card style={styles.storeCard}>
         <Card.Cover source={{ uri: item.image }} style={styles.storeImage} />
-        {console.log(item.image)}
         <Card.Content>
           <Title>{item.name}</Title>
           <Paragraph numberOfLines={2}>{item.description}</Paragraph>
@@ -64,8 +165,15 @@ const HomeScreen = ({ navigation }) => {
               <Ionicons name="star" size={16} color="#FFD700" />
               <Text style={styles.rating}>{item.rating}</Text>
             </View>
-            <Text style={styles.address}>{item.address}</Text>
+            
+            {item.formattedDistance && (
+              <View style={styles.distanceContainer}>
+                <Ionicons name="location" size={16} color="#007BFF" />
+                <Text style={styles.distance}>{item.formattedDistance}</Text>
+              </View>
+            )}
           </View>
+          <Text style={styles.address}>{item.address}</Text>
         </Card.Content>
       </Card>
     </TouchableOpacity>
@@ -91,8 +199,12 @@ const HomeScreen = ({ navigation }) => {
           style={styles.searchbar}
           onSubmitEditing={handleSearch}
         />
-        <TouchableOpacity style={styles.filterButton} onPress={() => navigation.navigate('Filter')}>
-          <Ionicons name="options-outline" size={24} color="#007BFF" />
+        <TouchableOpacity style={styles.filterButton} onPress={toggleSortBy}>
+          <Ionicons 
+            name={sortBy === 'distance' ? "locate-outline" : "star-outline"} 
+            size={24} 
+            color="#007BFF" 
+          />
         </TouchableOpacity>
       </View>
       
@@ -106,14 +218,39 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <Text style={styles.sectionTitle}>Popular Restaurants</Text>
+      <View style={styles.resultsHeader}>
+        <Text style={styles.sectionTitle}>
+          {activeCategory 
+            ? CATEGORIES.find(c => c.id === activeCategory)?.name + ' Restaurants' 
+            : 'Popular Restaurants'
+          }
+        </Text>
+        <Chip mode="outlined" style={styles.sortChip} onPress={toggleSortBy}>
+          {sortBy === 'distance' ? 'By distance' : 'By rating'}
+        </Chip>
+      </View>
 
-      <FlatList
-        data={filteredStores}
-        renderItem={renderStoreItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.storeList}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007BFF" />
+          <Text style={styles.loadingText}>Finding restaurants near you...</Text>
+        </View>
+      ) : filteredStores.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="restaurant-outline" size={60} color="#ccc" />
+          <Text style={styles.emptyText}>No restaurants found</Text>
+          <Text style={styles.emptySubtext}>
+            Try a different category or search term
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredStores}
+          renderItem={renderStoreItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.storeList}
+        />
+      )}
     </View>
   );
 };
@@ -123,9 +260,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  emptySubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
   topSection: {
     backgroundColor: '#007BFF',
-    paddingTop: Platform.OS === 'ios' ? 25 : 25,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
     paddingBottom: 25,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 20,
@@ -146,6 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     marginTop: 20,
+    alignItems: 'center',
   },
   searchbar: {
     flex: 1,
@@ -159,6 +325,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 10,
+    height: 48,
     elevation: 1,
   },
   categoryContainer: {
@@ -186,11 +353,21 @@ const styles = StyleSheet.create({
   activeCategoryText: {
     color: 'white',
   },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 16,
-    paddingHorizontal: 20,
+  },
+  sortChip: {
+    height: 30,
+    backgroundColor: 'white',
   },
   storeList: {
     paddingHorizontal: 20,
@@ -220,9 +397,20 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: 'bold',
   },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distance: {
+    fontSize: 14,
+    color: '#007BFF',
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
   address: {
     fontSize: 12,
     color: '#666',
+    marginTop: 4,
   },
 });
 

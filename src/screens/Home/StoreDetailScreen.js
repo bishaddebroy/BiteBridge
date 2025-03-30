@@ -9,38 +9,72 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  Linking,
+  Platform
 } from 'react-native';
-import { Button, Card, Title, Paragraph, Divider, Badge, ActivityIndicator } from 'react-native-paper';
+import { Button, Card, Title, Paragraph, Divider, Badge, Chip } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES } from '../../constants/mockData';
 import { CartContext } from '../../contexts/CartContext';
+import { getUserLocation } from '../../services/locationService';
+import { calculateDistance, formatDistance, geocodeAddress } from '../../services/geocodingService';
 
 const StoreDetailScreen = ({ route, navigation }) => {
-  const { storeId, highlightItemId } = route.params;
+  const { storeId } = route.params;
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
+  const [storeFoodCategories, setStoreFoodCategories] = useState([]);
+  const [distance, setDistance] = useState(null);
+  const [formattedDistance, setFormattedDistance] = useState(null);
   
   // Use CartContext instead of local cart state
   const { cartItems, addToCart, getItemCount } = useContext(CartContext);
-  
+
   useEffect(() => {
-    // Fetch store details
+    // In a real app, you would fetch store details from an API
+    // Here we're just using our mock data
     const fetchStoreDetails = async () => {
       try {
         setLoading(true);
-        // In a real app, you would fetch store details from an API
-        // Here we're just using mock data with a small delay to simulate network
-        setTimeout(() => {
-          const storeData = STORES.find((s) => s.id === storeId);
-          setStore(storeData);
-          setLoading(false);
+        
+        // Get store data
+        const storeData = STORES.find((s) => s.id === storeId);
+        
+        if (!storeData) {
+          Alert.alert('Error', 'Store not found');
+          navigation.goBack();
+          return;
+        }
+        
+        setStore(storeData);
+        
+        // Get user location
+        const location = await getUserLocation();
+        if (location) {
+          setUserLocation(location);
           
-          // If there's a highlighted item, scroll to it
-          if (highlightItemId && storeData) {
-            // Implementation would depend on your UI structure
-            // You might need a ref and scrollToItem function
-          }
-        }, 300);
+          // Calculate distance to store
+          const dist = calculateDistance(
+            location.latitude,
+            location.longitude,
+            storeData.coordinate.latitude,
+            storeData.coordinate.longitude
+          );
+          
+          setDistance(dist);
+          setFormattedDistance(formatDistance(dist));
+        }
+        
+        // Get store's food categories (in real app, this would come from API)
+        // This is just for demonstration
+        setStoreFoodCategories([
+          { id: '1', name: 'Italian' },
+          { id: '3', name: 'Pizza' },
+          { id: '7', name: 'Pasta' }
+        ]);
+        
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching store details:', error);
         Alert.alert('Error', 'Failed to load store details');
@@ -49,27 +83,14 @@ const StoreDetailScreen = ({ route, navigation }) => {
     };
     
     fetchStoreDetails();
-  }, [storeId, highlightItemId]);
+  }, [storeId, navigation]);
 
   const handleAddToCart = async (item) => {
     try {
       const success = await addToCart(item, storeId, store.name);
       
       if (success) {
-        Alert.alert(
-          'Added to Cart', 
-          `${item.name} has been added to your cart.`,
-          [
-            { 
-              text: 'Keep Shopping', 
-              style: 'default' 
-            },
-            { 
-              text: 'View Cart', 
-              onPress: () => navigation.navigate('Payment', { screen: 'Order' }) 
-            }
-          ]
-        );
+        Alert.alert('Success', `${item.name} added to cart`);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -78,36 +99,68 @@ const StoreDetailScreen = ({ route, navigation }) => {
   };
 
   const goToPayment = () => {
-    if (getItemCount() === 0) {
+    if (cartItems.length === 0) {
       Alert.alert('Cart Empty', 'Add items to the cart before proceeding to checkout.');
       return;
     }
     
     navigation.navigate('Payment', { screen: 'Order' });
   };
+  
+  const openDirections = () => {
+    if (!store || !store.coordinate) {
+      Alert.alert('Error', 'Store location not available');
+      return;
+    }
+    
+    const { latitude, longitude } = store.coordinate;
+    let url;
+    
+    if (Platform.OS === 'ios') {
+      url = `maps://app?saddr=Current%20Location&daddr=${latitude},${longitude}`;
+    } else {
+      url = `google.navigation:q=${latitude},${longitude}`;
+    }
+    
+    Linking.canOpenURL(url)
+      .then(supported => {
+        if (supported) {
+          return Linking.openURL(url);
+        } else {
+          // Fallback to browser-based maps if native maps app isn't available
+          const browserUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+          return Linking.openURL(browserUrl);
+        }
+      })
+      .catch(err => {
+        console.error('Error opening directions:', err);
+        Alert.alert('Error', 'Could not open directions. Please try again.');
+        
+        // Fallback to browser-based maps as last resort
+        const browserUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+        Linking.openURL(browserUrl).catch(() => {
+          Alert.alert('Error', 'Could not open directions in any map application.');
+        });
+      });
+  };
+
+  const renderCategory = ({ item }) => (
+    <Chip 
+      style={styles.categoryChip}
+      textStyle={styles.categoryChipText}
+    >
+      {item.name}
+    </Chip>
+  );
 
   const renderItem = ({ item }) => {
-    // Check if this item is in the cart
-    const itemInCart = cartItems.find(cartItem => cartItem.id === item.id);
-    const isHighlighted = highlightItemId === item.id;
-    
     return (
-      <Card 
-        style={[
-          styles.itemCard,
-          isHighlighted && styles.highlightedCard
-        ]}
-      >
+      <Card style={styles.itemCard}>
         <Card.Cover source={{ uri: item.image }} style={styles.itemImage} />
         <Card.Content>
           <Title style={styles.itemName}>{item.name}</Title>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-            {itemInCart && (
-              <Badge style={styles.cartBadge}>
-                {itemInCart.quantity}
-              </Badge>
-            )}
           </View>
         </Card.Content>
         <Card.Actions style={styles.cardActions}>
@@ -115,41 +168,21 @@ const StoreDetailScreen = ({ route, navigation }) => {
             mode="contained" 
             onPress={() => handleAddToCart(item)}
             style={styles.addButton}
-            icon={itemInCart ? "cart-plus" : "cart"}
           >
-            {itemInCart ? 'Add More' : 'Add to Cart'}
+            Add to Cart
           </Button>
         </Card.Actions>
       </Card>
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text style={styles.loadingText}>Loading store details...</Text>
-      </View>
-    );
-  }
-
   if (!store) {
     return (
       <View style={styles.centered}>
-        <Ionicons name="alert-circle-outline" size={60} color="#FF3B30" />
-        <Text style={styles.errorText}>Store not found</Text>
-        <Button 
-          mode="contained" 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          Go Back
-        </Button>
+        <Text>Loading...</Text>
       </View>
     );
   }
-
-  const itemCount = getItemCount();
 
   return (
     <View style={styles.container}>
@@ -164,11 +197,64 @@ const StoreDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
         
+        {storeFoodCategories.length > 0 && (
+          <View style={styles.categoriesContainer}>
+            <FlatList
+              data={storeFoodCategories}
+              renderItem={renderCategory}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        )}
+        
         <Text style={styles.description}>{store.description}</Text>
         
-        <View style={styles.addressContainer}>
-          <Ionicons name="location" size={18} color="#007BFF" />
-          <Text style={styles.address}>{store.address}</Text>
+        <View style={styles.infoRow}>
+          <View style={styles.addressContainer}>
+            <Ionicons name="location" size={18} color="#007BFF" />
+            <Text style={styles.address}>{store.address}</Text>
+          </View>
+          
+          {distance && (
+            <View style={styles.distanceContainer}>
+              <Ionicons name="navigate" size={18} color="#007BFF" />
+              <Text style={styles.distance}>{formattedDistance} away</Text>
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={openDirections}
+          >
+            <Ionicons name="map" size={20} color="#007BFF" />
+            <Text style={styles.actionText}>Directions</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => {
+              // In a real app, this would call the restaurant
+              Alert.alert('Demo', 'This would call the restaurant in a real app');
+            }}
+          >
+            <Ionicons name="call" size={20} color="#007BFF" />
+            <Text style={styles.actionText}>Call</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => {
+              // In a real app, this would share the restaurant
+              Alert.alert('Demo', 'This would share the restaurant in a real app');
+            }}
+          >
+            <Ionicons name="share-social" size={20} color="#007BFF" />
+            <Text style={styles.actionText}>Share</Text>
+          </TouchableOpacity>
         </View>
         
         <Divider style={styles.divider} />
@@ -186,12 +272,12 @@ const StoreDetailScreen = ({ route, navigation }) => {
         />
       </ScrollView>
       
-      {itemCount > 0 && (
+      {cartItems.length > 0 && (
         <View style={styles.cartButtonContainer}>
           <TouchableOpacity style={styles.cartButton} onPress={goToPayment}>
             <Text style={styles.cartButtonText}>Proceed to Checkout</Text>
             <Badge size={24} style={styles.badge}>
-              {itemCount}
+              {cartItems.reduce((total, item) => total + item.quantity, 0)}
             </Badge>
           </TouchableOpacity>
         </View>
@@ -209,21 +295,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  backButton: {
-    paddingHorizontal: 24,
   },
   storeImage: {
     width: '100%',
@@ -239,6 +310,7 @@ const styles = StyleSheet.create({
   storeName: {
     fontSize: 24,
     fontWeight: 'bold',
+    flex: 1,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -252,6 +324,17 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: 'bold',
   },
+  categoriesContainer: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+  },
+  categoryChip: {
+    marginRight: 8,
+    backgroundColor: '#F0F0F0',
+  },
+  categoryChipText: {
+    fontSize: 12,
+  },
   description: {
     fontSize: 16,
     color: '#555',
@@ -259,16 +342,47 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     lineHeight: 24,
   },
+  infoRow: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    marginBottom: 8,
   },
   address: {
     marginLeft: 8,
     fontSize: 14,
     color: '#666',
+    flex: 1,
+  },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distance: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#007BFF',
+    fontWeight: '500',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 16,
+    backgroundColor: '#F8F8F8',
+    marginTop: 16,
+    marginHorizontal: 16,
+    borderRadius: 8,
+  },
+  actionButton: {
+    alignItems: 'center',
+  },
+  actionText: {
+    marginTop: 4,
+    color: '#007BFF',
+    fontSize: 12,
   },
   divider: {
     marginVertical: 16,
@@ -281,21 +395,12 @@ const styles = StyleSheet.create({
   },
   itemsContainer: {
     paddingHorizontal: 8,
-    paddingBottom: 100, // Add space for the cart button at bottom
   },
   itemCard: {
     flex: 1,
     margin: 8,
     borderRadius: 10,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  highlightedCard: {
-    borderWidth: 2,
-    borderColor: '#007BFF',
   },
   itemImage: {
     height: 120,
@@ -307,17 +412,11 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   price: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007BFF',
-  },
-  cartBadge: {
-    backgroundColor: '#007BFF',
   },
   cardActions: {
     justifyContent: 'center',
@@ -335,10 +434,6 @@ const styles = StyleSheet.create({
     elevation: 10,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   cartButton: {
     backgroundColor: '#007BFF',
