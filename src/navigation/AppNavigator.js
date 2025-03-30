@@ -14,8 +14,7 @@ import ForgotPasswordScreen from '../screens/Auth/ForgotPasswordScreen';
 
 // Main screens
 import HomeScreen from '../screens/Home/HomeScreen';
-//import SearchScreen from '../screens/Home/SearchScreen';
-//import FilterScreen from '../screens/Home/FilterScreen';
+import SearchScreen from '../screens/Home/SearchScreen'; // Added SearchScreen
 import StoreDetailScreen from '../screens/Home/StoreDetailScreen';
 import MapScreen from '../screens/Map/MapScreen';
 import OrderScreen from '../screens/Payment/OrderScreen';
@@ -54,7 +53,11 @@ const HomeStack = () => {
         component={HomeScreen} 
         options={{ headerShown: false }}
       />
-      
+      <Stack.Screen 
+        name="Search" 
+        component={SearchScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen 
         name="StoreDetail" 
         component={StoreDetailScreen}
@@ -142,10 +145,9 @@ const TabNavigator = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        activeTintColor: '#007BFF',
-        inactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#007BFF',
+        tabBarInactiveTintColor: 'gray',
       })}
-      //tabBarOptions={{}}
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Map" component={MapStack} />

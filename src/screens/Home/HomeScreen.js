@@ -88,9 +88,19 @@ const HomeScreen = ({ navigation }) => {
     
     // Filter by category
     if (category) {
-      filtered = filtered.filter(store => 
-        store.categories && store.categories.includes(category)
-      );
+      const categoryObj = CATEGORIES.find(c => c.id === category);
+      const categoryName = categoryObj ? categoryObj.name.toLowerCase() : '';
+      
+      filtered = filtered.filter(store => {
+        // For demo purposes, we'll just check if store name or description
+        // contains the category name (since we don't have category data)
+        return store.name.toLowerCase().includes(categoryName) || 
+               store.description.toLowerCase().includes(categoryName) ||
+               // Check menu items
+               store.items.some(item => 
+                 item.name.toLowerCase().includes(categoryName)
+               );
+      });
     }
     
     // Filter by search query
