@@ -211,7 +211,7 @@ const HomeScreen = ({ navigation }) => {
         />
         <TouchableOpacity style={styles.filterButton} onPress={toggleSortBy}>
           <Ionicons 
-            name={sortBy === 'distance' ? "locate-outline" : "star-outline"} 
+            name={sortBy === 'distance' ? "star-outline" : "locate-outline"} 
             size={24} 
             color="#007BFF" 
           />
@@ -236,7 +236,7 @@ const HomeScreen = ({ navigation }) => {
           }
         </Text>
         <Chip mode="outlined" style={styles.sortChip} onPress={toggleSortBy}>
-          {sortBy === 'distance' ? 'By distance' : 'By rating'}
+          {sortBy === 'distance' ? 'By Rating' : 'By Distance'}
         </Chip>
       </View>
 
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   sortChip: {
-    height: 30,
+    height: 39,
     backgroundColor: 'white',
   },
   storeList: {

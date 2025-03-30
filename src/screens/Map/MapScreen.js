@@ -38,6 +38,7 @@ const MapScreen = ({ navigation }) => {
   const [geocoding, setGeocoding] = useState(false);
   const [sortBy, setSortBy] = useState('distance'); // 'distance', 'rating'
   const mapRef = useRef(null);
+  const markerRefs = useRef({});
 
   // Load user location and geocode store addresses
   useEffect(() => {
@@ -147,6 +148,11 @@ const MapScreen = ({ navigation }) => {
       
       setStoresWithDistances(sortedStores);
       setFilteredStores(sortedStores);
+      
+      // Initially select the closest store
+      if (sortedStores.length > 0) {
+        setSelectedStore(sortedStores[0]);
+      }
     } catch (error) {
       console.error('Error updating stores with distances:', error);
       setStoresWithDistances(STORES);
@@ -187,15 +193,17 @@ const MapScreen = ({ navigation }) => {
     
     setFilteredStores(filtered);
     
-    // If we have filtered results, center the map on the first result
-    if (filtered.length > 0 && searchQuery) {
-      const { coordinate } = filtered[0];
-      mapRef.current?.animateToRegion({
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude,
-        latitudeDelta: LATITUDE_DELTA,
-        longitudeDelta: LONGITUDE_DELTA,
-      });
+    // When sorting changes, select the top restaurant
+    if (filtered.length > 0) {
+      const topStore = filtered[0];
+      setSelectedStore(topStore);
+      
+      // Highlight the marker after a short delay to ensure the marker is rendered
+      setTimeout(() => {
+        if (markerRefs.current[topStore.id]) {
+          markerRefs.current[topStore.id].showCallout();
+        }
+      }, 300);
     }
   };
 
@@ -209,6 +217,31 @@ const MapScreen = ({ navigation }) => {
 
   const toggleSortBy = () => {
     setSortBy(sortBy === 'distance' ? 'rating' : 'distance');
+  };
+  
+  // Go to user's current location
+  const goToUserLocation = async () => {
+    try {
+      // Get fresh user location
+      const location = await getUserLocation();
+      
+      if (location) {
+        setUserLocation(location);
+        
+        // Animate to user location
+        mapRef.current?.animateToRegion({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA,
+        });
+      } else {
+        Alert.alert('Location unavailable', 'Unable to get your current location.');
+      }
+    } catch (error) {
+      console.error('Error getting user location:', error);
+      Alert.alert('Error', 'Failed to get your location. Please try again.');
+    }
   };
 
   if (loading) {
@@ -258,16 +291,24 @@ const MapScreen = ({ navigation }) => {
           </Chip>
           
           <Chip 
-            icon={sortBy === 'distance' ? 'map-marker-distance' : 'star'}
+            icon={sortBy === 'distance' ? 'star' : 'map-marker-distance'}
             mode="outlined"
             selected
             onPress={toggleSortBy}
             style={styles.sortChip}
           >
-            Sorted by {sortBy === 'distance' ? 'distance' : 'rating'}
+            Sort by {sortBy === 'distance' ? 'Rating' : 'Distance'}
           </Chip>
         </ScrollView>
       </View>
+      
+      {/* Location Button */}
+      <TouchableOpacity 
+        style={styles.locationButton}
+        onPress={goToUserLocation}
+      >
+        <Ionicons name="navigate-circle" size={24} color="#007BFF" />
+      </TouchableOpacity>
       
       <MapView
         ref={mapRef}
@@ -276,23 +317,32 @@ const MapScreen = ({ navigation }) => {
         initialRegion={region}
         onRegionChangeComplete={setRegion}
         showsUserLocation={true}
-        showsMyLocationButton={true}
+        showsMyLocationButton={false} // Disable default button, use our custom one
       >
         {filteredStores.map((store) => (
           <Marker
+            ref={ref => markerRefs.current[store.id] = ref}
             key={store.id}
             coordinate={store.coordinate}
             title={store.name}
             description={store.description}
             onPress={() => handleMarkerPress(store)}
+            // Show which store is selected with a different color
+            pinColor={selectedStore && selectedStore.id === store.id ? '#FF0000' : '#FF3B30'}
           >
             <View style={styles.markerContainer}>
-              <View style={styles.marker}>
-                <Ionicons name="restaurant" size={24} color="#FF3B30" />
+              <View style={[
+                styles.marker,
+                selectedStore && selectedStore.id === store.id && styles.selectedMarker
+              ]}>
+                <Ionicons 
+                  name="restaurant" 
+                  size={24} 
+                  color={selectedStore && selectedStore.id === store.id ? "#FF0000" : "#FF3B30"} 
+                />
               </View>
             </View>
             
-            {/* IMPORTANT CHANGES: Made callout clickable by adding onPress and removing tooltip prop */}
             <Callout 
               onPress={() => handleStoreDetail(store.id, store.name)}
               style={styles.calloutContainer}
@@ -416,6 +466,24 @@ const styles = StyleSheet.create({
     zIndex: 5,
     flexDirection: 'row',
   },
+  // User location button style
+  locationButton: {
+    position: 'absolute',
+    bottom: 210, // Position above the store preview card
+    right: 16,
+    backgroundColor: 'white',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 5,
+  },
   infoChip: {
     marginRight: 8,
     backgroundColor: 'white',
@@ -438,15 +506,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF3B30',
   },
-  // Updated callout styles
+  selectedMarker: {
+    borderColor: '#FF0000',
+    borderWidth: 2,
+    backgroundColor: '#FFEEEE',
+    // Add a subtle pulsing shadow/glow
+    shadowColor: '#FF0000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 6,
+  },
   calloutContainer: {
     width: 220,
-    height: 150, // Set fixed height to ensure consistent sizing
+    height: 150,
   },
   calloutCard: {
     width: '100%',
     borderRadius: 10,
-    elevation: 0, // Remove elevation to prevent touch issues
+    elevation: 0,
     margin: 0,
     padding: 0,
   },
