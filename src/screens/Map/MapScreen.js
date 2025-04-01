@@ -463,13 +463,14 @@ const styles = StyleSheet.create({
     top: Platform.OS === 'ios' ? 100 : 80,
     left: 10,
     right: 10,
+    marginTop: 10,
     zIndex: 5,
     flexDirection: 'row',
   },
   // User location button style
   locationButton: {
     position: 'absolute',
-    bottom: 210, // Position above the store preview card
+    bottom: 230, // Position above the store preview card
     right: 16,
     backgroundColor: 'white',
     width: 56,

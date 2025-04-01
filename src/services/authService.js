@@ -5,7 +5,7 @@ import {
     sendPasswordResetEmail,
     updateProfile
   } from 'firebase/auth';
-  import { doc, setDoc } from 'firebase/firestore';
+  import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
   import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
   import { auth, db, storage } from './firebase';
   
@@ -82,9 +82,34 @@ import {
     }
   };
   
+  // Check if user exists in Firestore
+  export const checkEmailExists = async (email) => {
+    try {
+      // Look up user by email in Firestore
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error("Error checking if user exists:", error);
+      return false;
+    }
+  };
+
   // Reset password
   export const resetPassword = async (email) => {
     try {
+      // First check if the email exists
+      const emailExists = await checkEmailExists(email);
+      
+      if (!emailExists) {
+        // Create a custom error object with the same format Firebase uses
+        const error = new Error("There is no user record corresponding to this email.");
+        error.code = "auth/user-not-found";
+        throw error;
+      }
+      
       await sendPasswordResetEmail(auth, email);
       return true;
     } catch (error) {

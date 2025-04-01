@@ -23,7 +23,17 @@ const ForgotPasswordScreen = ({ navigation }) => {
       );
     } catch (error) {
       console.error('Password reset error:', error);
-      Alert.alert('Error', error.message || 'Failed to send password reset email');
+      
+      // Check if the error is about user not found
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert(
+          'Account Not Found', 
+          'No account exists with this email address. Please check the email or create a new account.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', error.message || 'Failed to send password reset email');
+      }
     } finally {
       setLoading(false);
     }

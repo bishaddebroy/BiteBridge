@@ -186,7 +186,7 @@ const StoreDetailScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ paddingBottom: cartItems.length > 0 ? 80 : 20 }}>
         <Image source={{ uri: store.image }} style={styles.storeImage} />
         
         <View style={styles.headerContainer}>

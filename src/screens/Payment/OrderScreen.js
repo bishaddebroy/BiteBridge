@@ -1,4 +1,3 @@
-// src/screens/Payment/OrderScreen.js
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
@@ -9,6 +8,10 @@ import {
   Alert,
   ActivityIndicator,
   BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { Button, Divider, TextInput, RadioButton, HelperText } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,6 +90,8 @@ const OrderScreen = ({ navigation }) => {
   };
 
   const handlePayment = async () => {
+    Keyboard.dismiss();
+    
     // Mark form as touched to show validation errors
     setFormTouched(true);
     
@@ -155,186 +160,199 @@ const OrderScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollContainer}>
-        <Text style={styles.sectionTitle}>Order Summary</Text>
-        
-        {cartItems.map(item => (
-          <View key={item.id} style={styles.cartItem}>
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.storeName}>from {item.storeName}</Text>
-              <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-            </View>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+      keyboardVerticalOffset={0}
+    >
+      <ScrollView 
+        style={styles.scrollContainer} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View>
+            <Text style={styles.sectionTitle}>Order Summary</Text>
             
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-              >
-                <Ionicons name="remove" size={16} color="#007BFF" />
-              </TouchableOpacity>
-              
-              <Text style={styles.quantityText}>{item.quantity}</Text>
-              
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-              >
-                <Ionicons name="add" size={16} color="#007BFF" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => removeFromCart(item.id)}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-        
-        <Divider style={styles.divider} />
-        
-        <View style={styles.costsSummary}>
-          <View style={styles.costRow}>
-            <Text style={styles.costLabel}>Subtotal</Text>
-            <Text style={styles.costValue}>${subtotal.toFixed(2)}</Text>
-          </View>
-          
-          <View style={styles.costRow}>
-            <Text style={styles.costLabel}>Tax (15%)</Text>
-            <Text style={styles.costValue}>${tax.toFixed(2)}</Text>
-          </View>
-          
-          <View style={styles.costRow}>
-            <Text style={styles.costLabel}>Delivery Fee</Text>
-            <Text style={styles.costValue}>${deliveryFee.toFixed(2)}</Text>
-          </View>
-          
-          <View style={styles.costRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.sectionTitle}>Payment Method</Text>
-        
-        <View style={styles.paymentMethodContainer}>
-          <RadioButton.Group
-            onValueChange={value => setPaymentMethod(value)}
-            value={paymentMethod}
-          >
-            <View style={styles.paymentOption}>
-              <RadioButton value="creditCard" />
-              <View style={styles.paymentOptionContent}>
-                <Text style={styles.paymentOptionTitle}>Credit/Debit Card</Text>
-                <View style={styles.cardIcons}>
-                  <Ionicons name="card-outline" size={20} color="#666" />
+            {cartItems.map(item => (
+              <View key={item.id} style={styles.cartItem}>
+                <View style={styles.itemDetails}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.storeName}>from {item.storeName}</Text>
+                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                </View>
+                
+                <View style={styles.quantityContainer}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                  >
+                    <Ionicons name="remove" size={16} color="#007BFF" />
+                  </TouchableOpacity>
+                  
+                  <Text style={styles.quantityText}>{item.quantity}</Text>
+                  
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                  >
+                    <Ionicons name="add" size={16} color="#007BFF" />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeFromCart(item.id)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
+            ))}
             
-            <Divider />
+            <Divider style={styles.divider} />
             
-            <View style={styles.paymentOption}>
-              <RadioButton value="paypal" />
-              <View style={styles.paymentOptionContent}>
-                <Text style={styles.paymentOptionTitle}>PayPal</Text>
-              </View>
-            </View>
-            
-            <Divider />
-            
-            <View style={styles.paymentOption}>
-              <RadioButton value="applePay" />
-              <View style={styles.paymentOptionContent}>
-                <Text style={styles.paymentOptionTitle}>Apple Pay</Text>
-              </View>
-            </View>
-          </RadioButton.Group>
-        </View>
-        
-        {paymentMethod === 'creditCard' && (
-          <View style={styles.cardDetailsContainer}>
-            <TextInput 
-              label="Card Number"
-              placeholder="1234 5678 9012 3456"
-              value={cardNumber}
-              onChangeText={(text) => setCardNumber(formatCardNumber(text))}
-              style={styles.input}
-              keyboardType="number-pad"
-              error={formTouched && errors.cardNumber}
-              maxLength={19} // 16 digits + 3 spaces
-            />
-            {formTouched && errors.cardNumber && (
-              <HelperText type="error">{errors.cardNumber}</HelperText>
-            )}
-            
-            <View style={styles.cardDetailsRow}>
-              <View style={styles.halfInputContainer}>
-                <TextInput 
-                  label="Expiry Date"
-                  placeholder="MM/YY"
-                  value={expiryDate}
-                  onChangeText={handleExpiryDateChange}
-                  style={[styles.input, styles.halfInput]}
-                  keyboardType="number-pad"
-                  error={formTouched && errors.expiryDate}
-                  maxLength={5} // MM/YY format
-                />
-                {formTouched && errors.expiryDate && (
-                  <HelperText type="error">{errors.expiryDate}</HelperText>
-                )}
+            <View style={styles.costsSummary}>
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Subtotal</Text>
+                <Text style={styles.costValue}>${subtotal.toFixed(2)}</Text>
               </View>
               
-              <View style={styles.halfInputContainer}>
-                <TextInput 
-                  label="CVV"
-                  placeholder="123"
-                  value={cvv}
-                  onChangeText={setCvv}
-                  style={[styles.input, styles.halfInput]}
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  error={formTouched && errors.cvv}
-                  maxLength={4}
-                />
-                {formTouched && errors.cvv && (
-                  <HelperText type="error">{errors.cvv}</HelperText>
-                )}
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Tax (15%)</Text>
+                <Text style={styles.costValue}>${tax.toFixed(2)}</Text>
+              </View>
+              
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Delivery Fee</Text>
+                <Text style={styles.costValue}>${deliveryFee.toFixed(2)}</Text>
+              </View>
+              
+              <View style={styles.costRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
               </View>
             </View>
             
-            <TextInput 
-              label="Cardholder Name"
-              placeholder="John Doe"
-              value={cardholderName}
-              onChangeText={setCardholderName}
-              style={styles.input}
-              error={formTouched && errors.cardholderName}
-            />
-            {formTouched && errors.cardholderName && (
-              <HelperText type="error">{errors.cardholderName}</HelperText>
+            <Text style={styles.sectionTitle}>Payment Method</Text>
+            
+            <View style={styles.paymentMethodContainer}>
+              <RadioButton.Group
+                onValueChange={value => setPaymentMethod(value)}
+                value={paymentMethod}
+              >
+                <View style={styles.paymentOption}>
+                  <RadioButton value="creditCard" />
+                  <View style={styles.paymentOptionContent}>
+                    <Text style={styles.paymentOptionTitle}>Credit/Debit Card</Text>
+                    <View style={styles.cardIcons}>
+                      <Ionicons name="card-outline" size={20} color="#666" />
+                    </View>
+                  </View>
+                </View>
+                
+                <Divider />
+                
+                <View style={styles.paymentOption}>
+                  <RadioButton value="paypal" />
+                  <View style={styles.paymentOptionContent}>
+                    <Text style={styles.paymentOptionTitle}>PayPal</Text>
+                  </View>
+                </View>
+                
+                <Divider />
+                
+                <View style={styles.paymentOption}>
+                  <RadioButton value="applePay" />
+                  <View style={styles.paymentOptionContent}>
+                    <Text style={styles.paymentOptionTitle}>Apple Pay</Text>
+                  </View>
+                </View>
+              </RadioButton.Group>
+            </View>
+            
+            {paymentMethod === 'creditCard' && (
+              <View style={styles.cardDetailsContainer}>
+                <TextInput 
+                  label="Card Number"
+                  placeholder="1234 5678 9012 3456"
+                  value={cardNumber}
+                  onChangeText={(text) => setCardNumber(formatCardNumber(text))}
+                  style={styles.input}
+                  keyboardType="number-pad"
+                  error={formTouched && errors.cardNumber}
+                  maxLength={19} // 16 digits + 3 spaces
+                />
+                {formTouched && errors.cardNumber && (
+                  <HelperText type="error">{errors.cardNumber}</HelperText>
+                )}
+                
+                <View style={styles.cardDetailsRow}>
+                  <View style={styles.halfInputContainer}>
+                    <TextInput 
+                      label="Expiry Date"
+                      placeholder="MM/YY"
+                      value={expiryDate}
+                      onChangeText={handleExpiryDateChange}
+                      style={[styles.input, styles.halfInput]}
+                      keyboardType="number-pad"
+                      error={formTouched && errors.expiryDate}
+                      maxLength={5} // MM/YY format
+                    />
+                    {formTouched && errors.expiryDate && (
+                      <HelperText type="error">{errors.expiryDate}</HelperText>
+                    )}
+                  </View>
+                  
+                  <View style={styles.halfInputContainer}>
+                    <TextInput 
+                      label="CVV"
+                      placeholder="123"
+                      value={cvv}
+                      onChangeText={setCvv}
+                      style={[styles.input, styles.halfInput]}
+                      keyboardType="number-pad"
+                      secureTextEntry
+                      error={formTouched && errors.cvv}
+                      maxLength={4}
+                    />
+                    {formTouched && errors.cvv && (
+                      <HelperText type="error">{errors.cvv}</HelperText>
+                    )}
+                  </View>
+                </View>
+                
+                <TextInput 
+                  label="Cardholder Name"
+                  placeholder="John Doe"
+                  value={cardholderName}
+                  onChangeText={setCardholderName}
+                  style={styles.input}
+                  error={formTouched && errors.cardholderName}
+                />
+                {formTouched && errors.cardholderName && (
+                  <HelperText type="error">{errors.cardholderName}</HelperText>
+                )}
+              </View>
             )}
+            
+            {/* Extra space to ensure button doesn't overlap content */}
+            <View style={styles.buttonPlaceholder} />
           </View>
-        )}
-        
-        <View style={styles.spacer} />
+        </TouchableWithoutFeedback>
       </ScrollView>
       
-      <View style={styles.footer}>
+      <View style={styles.buttonContainer}>
         <Button
           mode="contained"
-          style={styles.payButton}
-          loading={loading}
-          disabled={loading || cartItems.length === 0}
           onPress={handlePayment}
+          disabled={loading || cartItems.length === 0}
+          style={styles.payButton}
+          contentStyle={styles.payButtonContent}
         >
           Pay Now ${total.toFixed(2)}
         </Button>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -356,7 +374,10 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100, // Space for the button
   },
   sectionTitle: {
     fontSize: 20,
@@ -501,28 +522,26 @@ const styles = StyleSheet.create({
   halfInput: {
     width: '100%',
   },
-  spacer: {
-    height: 100,
+  buttonPlaceholder: {
+    height: 80,
   },
-  footer: {
+  buttonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: 'white',
-    padding: 16,
-    elevation: 8,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    padding: 0,
   },
   payButton: {
-    width: '100%',
-    paddingVertical: 8,
+    borderRadius: 0,
+    margin: 0,
   },
+  payButtonContent: {
+    height: 56,
+  }
 });
 
 export default OrderScreen;
