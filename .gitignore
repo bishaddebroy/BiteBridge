@@ -36,4 +36,4 @@ yarn-error.*
 *.tsbuildinfo
 
 #firebase (Only public for the private repository)
-# firebaseConfig.js
+firebaseConfig.js

@@ -1,7 +1,7 @@
 // src/services/geocodingService.js
 
 // Replace this with your actual Google API key
-const GOOGLE_API_KEY = 'AIzaSyBLIQ3FesZhqTUS5AO2opiyIFrWT9xQaEs';
+const GOOGLE_API_KEY = 'google_api_key_here_or_in_env_file';
 
 /**
  * Converts an address to geographic coordinates (latitude and longitude)
